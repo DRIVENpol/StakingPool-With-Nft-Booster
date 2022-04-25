@@ -5,6 +5,7 @@
 pragma solidity ^0.8.10;
 
 // @note libraries and interfaces
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -18,6 +19,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 contract MasterChefV2 is Ownable, ReentrancyGuard {
 
     // @note using libraries
+    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // @note user's info
@@ -87,13 +89,10 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     // @note mapping + bool variable in order to don't have duplicated pools
     mapping(IERC20 => bool) public poolExistence;
 
-    modifier nonDuplicated(IERC20 _lpToken) {
-        require(poolExistence[_lpToken] == false, "nonDuplicated: duplicated");
-        _;
-    }
 
     // @note add a new pool
-    function add(uint256 _allocPoint, IERC20 _lpToken, uint16 _depositFeeBP, bool _withUpdate) public onlyOwner nonDuplicated(_lpToken) {
+    function add(uint256 _allocPoint, IERC20 _lpToken, uint16 _depositFeeBP, bool _withUpdate) public onlyOwner {
+        require(poolExistence[_lpToken] == false, "nonDuplicated: duplicated");
         require(_depositFeeBP <= 10000, "add: invalid deposit fee basis points");
         if (_withUpdate) {
             massUpdatePools();
@@ -148,7 +147,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
    // @note update the pools and mint the tokens by calling "updatePool" function
     function massUpdatePools() public {
         uint256 length = poolInfo.length;
-        for (uint256 pid = 0; pid < length; ++pid) {
+        for (uint256 pid = 0; pid < 6; ++pid) { // @note max 6 pools
             updatePool(pid);
         }
     }
