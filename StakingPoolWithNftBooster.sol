@@ -44,7 +44,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     uint256 public tokensPerBlock; // Tokens emitted per block
     uint256 public BONUS_MULTIPLIER = 1; // Multiplier for early stakers
     uint256 public nftBoosted = 2; // 1  -nft boosted apy  2 = not boosted
-    uint256 public nftBoostMagnitude = 0;
+    uint256 public nftBoostMagnitude = 1; // i.e: 0.25, 1.25, 1.5, 1.75
 
     address public feeAddress; // Address to receive fees
     address public devaddr; // Main dev address
