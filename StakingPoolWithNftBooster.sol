@@ -20,6 +20,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
 
     // @note using libraries
     using SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     // @note user's info
     struct UserInfo {
@@ -43,7 +44,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     uint256 public tokensPerBlock; // Tokens emitted per block
     uint256 public BONUS_MULTIPLIER = 1; // Multiplier for early stakers
     uint256 public nftBoosted = 2; // 1  -nft boosted apy  2 = not boosted
-    uint256 public nftBoostMagnitude = 1; // i.e: 0.25, 1.25, 1.5, 1.75
+    uint256[4] public nftBoostMagnitude = [1, 1, 1, 1]; // Magnitude for 0, 1-5, 5-10, +10 Nfts in holder's wallet; 1 by default
 
     address public feeAddress; // Address to receive fees
     address public devaddr; // Main dev address
@@ -130,6 +131,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accTokensPerShare = pool.accTokensPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+         uint256 i = checkNftBalance(msg.sender);
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
             uint256 reward = multiplier.mul(tokensPerBlock).mul(pool.allocPoint).div(totalAllocPoint);
@@ -137,7 +139,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
         }
 
         if(nftBoosted == 1 && nftAddress.balanceOf(msg.sender) != 0) {
-            return user.amount.mul(accTokensPerShare).div(1e12).sub(user.rewardDebt).mul(nftBoostMagnitude);
+            return user.amount.mul(accTokensPerShare).div(1e12).sub(user.rewardDebt).mul(nftBoostMagnitude[i]);
         } else {
              return user.amount.mul(accTokensPerShare).div(1e12).sub(user.rewardDebt);
         }
@@ -145,7 +147,7 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
 
    // @note update the pools and mint the tokens by calling "updatePool" function
     function massUpdatePools() public {
-        uint256 length = poolInfo.length;
+        // uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < 6; ++pid) { // @note max 6 pools
             updatePool(pid);
         }
@@ -215,9 +217,9 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
 
         uint256 pendingBefore = user.amount.mul(pool.accTokensPerShare).div(1e12).sub(user.rewardDebt);
         uint256 pending;
-
+        uint256 i = checkNftBalance(msg.sender);
         if(nftBoosted == 1 && nftAddress.balanceOf(msg.sender) != 0) {
-             pending = pendingBefore.mul(nftBoostMagnitude);
+             pending = pendingBefore.mul(nftBoostMagnitude[i]);
         } else {
             pending = pendingBefore;
         }
@@ -293,7 +295,26 @@ contract MasterChefV2 is Ownable, ReentrancyGuard {
     }
 
     // @note set boosted APY for NFT holders
-    function setBoostedApyForNft(uint256 _multiplier) public onlyOwner {
-        nftBoostMagnitude = _multiplier;
+    function setBoostedApyForNft(uint256 _zeroNfts, uint256 _upToFiveNfts, uint256 _upToTenNfts, uint256 _overTenNfts) public onlyOwner {
+        nftBoostMagnitude[0] = _zeroNfts;
+        nftBoostMagnitude[1] = _upToFiveNfts;
+        nftBoostMagnitude[2] = _upToTenNfts;
+        nftBoostMagnitude[3] = _overTenNfts;
+    }
+
+    // @note internal function to check the balance of NFTs
+    function checkNftBalance(address _who) public view returns(uint256) {
+             if(nftAddress.balanceOf(_who) >=1 && nftAddress.balanceOf(_who) <=5) {
+                 return 1;
+             } else {
+                  if(nftAddress.balanceOf(_who) >=6 && nftAddress.balanceOf(_who) <=10) {
+                      return 2;
+                  } else {
+                       if(nftAddress.balanceOf(_who) >=11) {
+                           return 3;
+                       }
+                  }
+             }
+        return 0;
     }
 }
