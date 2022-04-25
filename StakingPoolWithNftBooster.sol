@@ -19,7 +19,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 contract MasterChefV2 is Ownable, ReentrancyGuard {
 
     // @note using libraries
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     // @note user's info
